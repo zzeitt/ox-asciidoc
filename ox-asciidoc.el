@@ -83,8 +83,8 @@
     (src-block . org-asciidoc-src-block)
     (statistics-cookie . org-asciidoc-identity)
     (strike-through . org-asciidoc-strike-through)
-    (subscript . org-asciidoc-identity)
-    (superscript . org-asciidoc-identity)
+    (subscript . org-asciidoc-subscript)
+    (superscript . org-asciidoc-superscript)
     (table . org-asciidoc-table)
     (table-cell . org-asciidoc-table-cell)
     (table-row . org-asciidoc-table-row)
@@ -161,6 +161,11 @@ CONTENTS is its contents, as a string or nil.  INFO is ignored."
 (defun org-asciidoc-verbatim (verbatim contents info)
   (concat "`" (org-asciidoc-encode-plain-text (org-element-property :value verbatim)) "`"))
 
+(defun org-asciidoc-superscript (_superscript contents _info)
+  (format "^%s^" contents))
+
+(defun org-asciidoc-subscript (_superscript contents _info)
+  (format "~%s~" contents))
 
 ;;; Head Line
 (defun org-asciidoc-headline (headline contents info)
@@ -175,7 +180,7 @@ CONTENTS is the headline contents."
       (if (org-export-low-level-p headline info)
           (concat (make-string (- level limit) ?*) " " title "\n" contents)
         (let ((delimiter (make-string (1+ level) ?=)))
-          (concat "\n" delimiter " " title " " delimiter "\n" contents))))))
+          (concat "\n" delimiter " " title "\n" contents))))))
 
 
 ;;; Block helper
@@ -314,6 +319,9 @@ holding contextual information."
       (concat
        (org-asciidoc--get-block-title special-block info)
        "****\n" contents "****"))
+     ((member type '("NOTE" "IMPORTANT" "TIP" "CAUTION" "WARNING"
+                     "note" "important" "tip" "caution" "warning"))
+      (format "%s: %s" (upcase type) (replace-regexp-in-string "^\n" "" contents)))
      (t
       contents))))
 
@@ -334,7 +342,9 @@ information."
   "Transcode a SRC-BLOCK element into AsciiDoc format.
 CONTENTS is nil.  INFO is a plist holding contextual
 information."
-  (let ((value (org-element-property :value src-block))
+  (let* (
+        (code-info (org-export-unravel-code src-block))
+        (code (car code-info))
         (lang (org-element-property :language src-block))
         (linum (if (org-element-property :number-lines src-block)
                    ",linenums" ""))
@@ -349,9 +359,9 @@ information."
                   (base (file-name-sans-extension file))
                   (ext (file-name-extension file)))
              (concat "[" lang ", target=" base ", format=" ext "]\n")))
-       (concat "[source," lang linum "]\n"))
+       (concat "\n[source," lang linum "]\n"))
      (org-asciidoc--get-block-title src-block info)
-     "----\n" value "----")))
+     "----\n" code "\n----\n")))
 
 
 ;;; Quoted Block
@@ -507,7 +517,8 @@ be converted with AsciiDoc's image macro."
 	(latex-transcoder (plist-get info :asciidoc-latex)))
     (concat
      ;; The first line, title
-     (format "= %s =\n" title)
+     (when (plist-get info :with-title)
+       (format "= %s\n" title))
      ;; The second line, name and email address "name <email@address>"
      ;; no email if no author
      (when (org-string-nw-p author)
@@ -589,7 +600,7 @@ contents of hidden elements.
 
 Return output file name."
   (interactive)
-  (let ((outfile (org-export-output-file-name ".txt" subtreep)))
+  (let ((outfile (org-export-output-file-name ".adoc" subtreep)))
     (org-export-to-file 'asciidoc outfile async subtreep visible-only)))
 
 ;;;###autoload
@@ -601,7 +612,7 @@ is the property list for the given project.  PUB-DIR is the
 publishing directory.
 
 Return output file name."
-  (org-publish-org-to 'asciidoc filename ".txt" plist pub-dir))
+  (org-publish-org-to 'asciidoc filename ".adoc" plist pub-dir))
 
 (provide 'ox-asciidoc)
 
