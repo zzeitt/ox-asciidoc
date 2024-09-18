@@ -98,6 +98,10 @@
   '((:headline-levels nil nil 4 t)
     (:asciidoc-docinfo nil "asciidoc-docinfo" org-asciidoc-docinfo)
     (:asciidoc-latex nil "asciidoc-latex" org-asciidoc-latex))
+  :filters-alist
+  '(
+    (:filter-table-row . org-asciidoc-table-row-filter)
+    )
   :menu-entry
   '(?a "Export to Asciidoc"
        ((?a "As Asciidoc buffer"
@@ -322,6 +326,8 @@ holding contextual information."
      ((member type '("NOTE" "IMPORTANT" "TIP" "CAUTION" "WARNING"
                      "note" "important" "tip" "caution" "warning"))
       (format "%s: %s" (upcase type) (replace-regexp-in-string "^\n" "" contents)))
+     ((string= "pagebreak" type)
+      "\n<<<\n")
      (t
       contents))))
 
@@ -450,12 +456,21 @@ plist holding contextual information."
 
 (defun org-asciidoc-table-row (table-row contents info)
   "Transcode TABLE ROW element into AsciiDoc format."
-  (concat contents "\n"))
+  (concat contents ""))
 
 (defun org-asciidoc-table-cell (table-cell contents info)
   "Transcode TABLE CELL element into AsciiDoc format."
   (concat "| " contents))
 
+(defun org-asciidoc-table-row-filter (data _backend info)
+  ;; Find the "<3+>" string in table cell.
+  (string-match "\\(?:<\\)\\([0-9]\\+\\)\\(?:>\\)" data)
+  (let* ((span (match-string 1 data))
+         (ret data))
+    (if span
+        ;; Remove the "span" and trailing '|'.
+        (setq ret (format "%s%s" span (replace-regexp-in-string "\\(<[0-9]\\+>\\)\\|\\([|\\|\s]+$\\)" "" data))))
+    ret))
 
 ;;; Link
 (defun org-asciidoc-leading-slashp (str)
