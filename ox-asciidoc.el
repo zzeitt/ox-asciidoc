@@ -181,10 +181,14 @@ CONTENTS is the headline contents."
     (let* ((level (org-export-get-relative-level headline info))
            (title (org-export-data (org-element-property :title headline) info))
            (limit (plist-get info :headline-levels)))
-      (if (org-export-low-level-p headline info)
-          (concat (make-string (- level limit) ?*) " " title "\n" contents)
-        (let ((delimiter (make-string (1+ level) ?=)))
-          (concat "\n" delimiter " " title "\n" contents))))))
+      ;; (if (org-export-low-level-p headline info)
+      ;;     (concat (make-string (- level limit) ?*) " " title "\n" contents)
+      ;;   (let ((delimiter (make-string (1+ level) ?=)))
+      ;;     (concat "\n" delimiter " " title "\n" contents))))))
+      ;; We treat all level headlines same.
+      (let ((delimiter (make-string (1+ level) ?=)))
+        (concat "\n" delimiter " " title "\n" contents))
+      )))
 
 
 ;;; Block helper
