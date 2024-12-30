@@ -104,9 +104,9 @@
     )
   :menu-entry
   '(?a "Export to Asciidoc"
-       ((?a "As Asciidoc buffer"
+       ((?A "As Asciidoc buffer"
 	    (lambda (a s v b) (org-asciidoc-export-as-asciidoc a s v)))
-	(?A "As Asciidoc file"
+	(?a "As Asciidoc file"
 	    (lambda (a s v b) (org-asciidoc-export-to-asciidoc a s v)))
 	(?o "As Asciidoc file and open"
 	    (lambda (a s v b)
@@ -356,6 +356,7 @@ information."
         (code-info (org-export-unravel-code src-block))
         (code (car code-info))
         (lang (org-element-property :language src-block))
+        (lang (if (string= "rs" lang) "bash" lang))
         (linum (if (org-element-property :number-lines src-block)
                    ",linenums" ""))
         (params (nth 2 (org-babel-get-src-block-info)))
